@@ -1,0 +1,51 @@
+# Secrets
+.env
+*.pem
+*.key
+*.p12
+*.pfx
+certs/
+credentials*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+
+# Oracle
+instantclient*/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Docs PIX (arquivos grandes de referencia)
+pix*.md
+doc_api_cobranca.md
+manual_*.md
+manual_*.html
+*.html
+
+# Obsidian vault
+bolecode_bolepix/
+
+# Claude Code resources (nao sao codigo do projeto)
+Claude_Code/
+
+# META-INF (Oracle JAR extraido)
+META-INF/

@@ -1,0 +1,105 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__mcp-registry__search_mcp_registry",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:mcpvault.org)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:deepwiki.com)",
+      "WebFetch(domain:www.builder.io)",
+      "WebFetch(domain:mcpcat.io)",
+      "Bash(claude mcp:*)",
+      "Bash(where claude.exe)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:zazencodes.substack.com)",
+      "Bash(npx --version)",
+      "Bash(curl -s -k * https://127.0.0.1:27124/*)",
+      "Bash(bash \"G:/Meu Drive/ProjetosDev/bolecode_python/.claude/hooks/secret-scanner.sh\")",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(bash \"G:/Meu Drive/ProjetosDev/bolecode_python/.claude/hooks/session-end.sh\")",
+      "Bash(grep -o '\"OK\"' echo \"---\")",
+      "Bash(echo \"mapa: $?\")",
+      "Bash(python -c ':*)",
+      "Bash(python -c \"import oracledb; print\\(f'oracledb {oracledb.__version__} OK'\\)\")",
+      "Bash(python scripts/setup_bolecode_schema.py)",
+      "Bash(set ORACLE_HOST=192.168.56.102)",
+      "Bash(ORACLE_HOST=192.168.56.102 python scripts/setup_bolecode_schema.py)",
+      "Read(//c/oracle/**)",
+      "Read(//c/oracle/product/**)",
+      "Bash(ORACLE_HOST=192.168.56.102 ORACLE_INSTANT_CLIENT_DIR=\"C:\\\\\\\\oracle\\\\\\\\product\\\\\\\\19.0.0\\\\\\\\client_1\\\\\\\\bin\" python scripts/setup_bolecode_schema.py)",
+      "Bash(python -c \"import struct; print\\(f'Python {struct.calcsize\\(\\\\\"P\\\\\"\\)*8}-bit'\\)\")",
+      "Bash(find /c/oracle -name \"oci.dll\" -exec file {} \\\\;)",
+      "Bash(ls \"G:\\\\Meu Drive\\\\ProjetosDev\\\\bolecode_python\"/instantclient* -d)",
+      "Bash(ls \"G:\\\\Meu Drive\\\\ProjetosDev\\\\bolecode_python\"/instant* -d)",
+      "Bash(curl -L -o instantclient-basic-windows.zip \"https://download.oracle.com/otn_software/nt/instantclient/2340000/instantclient-basic-windows.x64-23.4.0.24.05.zip\")",
+      "Bash(ORACLE_HOST=192.168.56.102 ORACLE_INSTANT_CLIENT_DIR=\"G:\\\\\\\\Meu Drive\\\\\\\\ProjetosDev\\\\\\\\bolecode_python\\\\\\\\instantclient_23_4\" python scripts/setup_bolecode_schema.py)",
+      "Bash(python main.py)",
+      "Bash(python -m py_compile src/desktop/widgets/boletos_tab.py)",
+      "Bash(python -m py_compile src/desktop/widgets/erros_tab.py)",
+      "Bash(python -m py_compile src/desktop/widgets/qr_dialog.py)",
+      "Bash(python -m py_compile main.py)",
+      "Bash(curl -sk --max-time 5 \"https://127.0.0.1:27124/vault/project-context/api-bradesco.md\")",
+      "mcp__obsidian__obsidian_read_note",
+      "mcp__obsidian__obsidian_global_search",
+      "Bash(find \"G:\\\\Meu Drive\\\\ProjetosDev\\\\bolecode_python\" -type f \\\\\\( -name \"*.py\" -o -name \"*.md\" -o -name \"*.txt\" \\\\\\) -exec grep -l \"PIX\\\\|cobranca\\\\|TXID\\\\|txid\" {} \\\\;)",
+      "Bash(python -m py_compile src/jobs/registrar_boletos.py)",
+      "Bash(python -m py_compile src/monitor/scheduler.py)",
+      "Bash(python -m py_compile src/ui/api_routes.py)",
+      "Bash(python -m py_compile src/desktop/widgets/cobranca_tab.py)",
+      "Bash(python -m py_compile src/desktop/widgets/settings_dialog.py)",
+      "Bash(python -m py_compile src/api/pix_client.py)",
+      "Bash(python -m py_compile src/jobs/registrar_pix.py)",
+      "Bash(python -m py_compile src/jobs/consultar_pix.py)",
+      "Bash(python -m py_compile src/ui/pix_webhook_receiver.py)",
+      "Bash(python -m py_compile src/jobs/sync_pcprest.py)",
+      "Bash(python -m py_compile src/db/oracle.py)",
+      "Bash(python -m py_compile src/desktop/main_window.py)",
+      "Bash(python -c \"from src.desktop.widgets.settings_dialog import SettingsDialog; print\\('Import OK'\\)\")",
+      "Bash(python -m py_compile src/desktop/theme.py)",
+      "Bash(del \"G:\\\\Meu Drive\\\\ProjetosDev\\\\bolecode_python\\\\.git\\\\index.lock\")",
+      "Bash(python -c \"import os; f='G:\\\\\\\\\\\\\\\\Meu Drive\\\\\\\\\\\\\\\\ProjetosDev\\\\\\\\\\\\\\\\bolecode_python\\\\\\\\\\\\\\\\.git\\\\\\\\\\\\\\\\index.lock'; os.remove\\(f\\) if os.path.exists\\(f\\) else None; print\\('done'\\)\")",
+      "Bash(taskkill /f /im \"GoogleDriveFS.exe\")",
+      "Bash(python -c \"import os; os.remove\\(r'G:\\\\Meu Drive\\\\ProjetosDev\\\\bolecode_python\\\\.git\\\\index.lock'\\); print\\('removed'\\)\")",
+      "Bash(python -c \"import os, glob; files = glob.glob\\(r'G:\\\\Meu Drive\\\\ProjetosDev\\\\bolecode_python\\\\.git\\\\*.lock'\\); print\\(files\\); [os.remove\\(f\\) for f in files]\")",
+      "Bash(xcopy /E /I /Q \"G:\\\\Meu Drive\\\\ProjetosDev\\\\bolecode_python\\\\.git\" \"C:\\\\temp\\\\bolecode_git\\\\.git\")"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/secret-scanner.sh"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/startup-loader.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-end.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
