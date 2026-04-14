@@ -124,14 +124,6 @@ class CobrancaTab(QWidget):
         self._table.setSelectionMode(QTableWidget.SelectionMode.NoSelection)
         layout.addWidget(self._table, 1)
 
-        # ── Filiais ───────────────────────────────────────
-        filiais_group = QGroupBox("Filiais Monitoradas")
-        filiais_layout = QFormLayout(filiais_group)
-        self._filiais_edit = QLineEdit()
-        self._filiais_edit.setPlaceholderText("1,2,3 (separar por virgula)")
-        filiais_layout.addRow("CODFILIAL:", self._filiais_edit)
-        layout.addWidget(filiais_group)
-
         # ── Cobranças Configuradas (resumo salvo) ─────────
         saved_group = QGroupBox("Cobrancas Configuradas")
         saved_layout = QVBoxLayout(saved_group)
@@ -331,9 +323,14 @@ class CobrancaTab(QWidget):
             all_codes = [c.strip() for c in (codcobs_boleto + "," + codcobs_pix).split(",") if c.strip()]
             desc_map = {}
             if all_codes:
-                in_clause = ",".join(f"'{c}'" for c in all_codes)
+                # Bind variables para IN clause (evita SQL injection)
+                binds = {f"p{i}": c for i, c in enumerate(all_codes)}
+                placeholders = ",".join(f":p{i}" for i in range(len(all_codes)))
                 try:
-                    rows = query_oracle(f"SELECT CODCOB, COBRANCA FROM PCCOB WHERE CODCOB IN ({in_clause})")
+                    rows = query_oracle(
+                        f"SELECT CODCOB, COBRANCA FROM PCCOB WHERE CODCOB IN ({placeholders})",
+                        binds,
+                    )
                     desc_map = {str(r["codcob"]): str(r.get("cobranca", "")) for r in rows}
                 except Exception:
                     pass  # sem descricao, mostra so o codigo

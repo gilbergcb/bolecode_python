@@ -47,11 +47,23 @@ def _serialize(val) -> object:
     return val
 
 
-def _build_query(codcobs: list[str], filiais: list[str]) -> str:
-    """Monta query com IN clause dinamico (Oracle nao aceita bind list)."""
-    in_codcob = ",".join(f"'{c}'" for c in codcobs)
-    in_filial = ",".join(f"'{f}'" for f in filiais)
-    return f"""
+def _build_in_binds(prefix: str, values: list[str]) -> tuple[str, dict]:
+    """Gera placeholders bind para IN clause. Ex: ':c0,:c1' + {'c0':'237','c1':'BK'}."""
+    binds = {}
+    names = []
+    for i, v in enumerate(values):
+        key = f"{prefix}{i}"
+        binds[key] = v
+        names.append(f":{key}")
+    return ",".join(names), binds
+
+
+def _build_query(codcobs: list[str], filiais: list[str]) -> tuple[str, dict]:
+    """Monta query com bind variables para IN clauses (sem SQL injection)."""
+    in_codcob, binds_codcob = _build_in_binds("c", codcobs)
+    in_filial, binds_filial = _build_in_binds("f", filiais)
+    params = {**binds_codcob, **binds_filial}
+    sql = f"""
         SELECT
             p.NUMTRANSVENDA,
             p.PREST,
@@ -78,6 +90,7 @@ def _build_query(codcobs: list[str], filiais: list[str]) -> str:
           AND p.DTPAG IS NULL
           AND p.DTVENC >= TRUNC(SYSDATE) - 30
     """
+    return sql, params
 
 
 def run_sync() -> int:
@@ -95,8 +108,8 @@ def run_sync() -> int:
     pix_set = set(codcobs_pix)
 
     try:
-        query = _build_query(all_codcobs, filiais)
-        rows = query_oracle(query)
+        query, params = _build_query(all_codcobs, filiais)
+        rows = query_oracle(query, params)
     except Exception as exc:
         logger.error(f"Erro ao consultar Oracle: {exc}")
         log_service_event("ERROR", "Falha na consulta Oracle PCPREST", {"erro": str(exc)})

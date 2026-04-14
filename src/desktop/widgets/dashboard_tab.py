@@ -68,10 +68,16 @@ class DashboardTab(QWidget):
         sched_row.setSpacing(12)
 
         self.sched_sync = SchedulerCard("sync", "Sync Oracle")
-        self.sched_registrar = SchedulerCard("registrar", "Registrar Bradesco")
+        self.sched_registrar = SchedulerCard("registrar", "Registrar Boleto")
+        self.sched_registrar_pix = SchedulerCard("registrar_pix", "Registrar PIX")
         self.sched_writeback = SchedulerCard("writeback", "Writeback Oracle")
+        self.sched_liquidados = SchedulerCard("liquidados", "Liquidados Boleto")
+        self.sched_consultar_pix = SchedulerCard("consultar_pix", "Liquidados PIX")
 
-        for card in [self.sched_sync, self.sched_registrar, self.sched_writeback]:
+        for card in [
+            self.sched_sync, self.sched_registrar, self.sched_registrar_pix,
+            self.sched_writeback, self.sched_liquidados, self.sched_consultar_pix,
+        ]:
             sched_row.addWidget(card)
         sched_row.addStretch()
 
@@ -136,8 +142,17 @@ class DashboardTab(QWidget):
         self.sched_registrar.update_status(
             sched.get("registrar", "aguardando"), sched.get("registrar_count", 0)
         )
+        self.sched_registrar_pix.update_status(
+            sched.get("registrar_pix", "aguardando"), sched.get("registrar_pix_count", 0)
+        )
         self.sched_writeback.update_status(
             sched.get("writeback", "aguardando"), sched.get("writeback_count", 0)
+        )
+        self.sched_liquidados.update_status(
+            sched.get("liquidados", "aguardando"), sched.get("liquidados_count", 0)
+        )
+        self.sched_consultar_pix.update_status(
+            sched.get("consultar_pix", "aguardando"), sched.get("consultar_pix_count", 0)
         )
 
     def update_filiais(self, data: dict) -> None:

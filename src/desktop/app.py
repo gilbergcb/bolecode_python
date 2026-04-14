@@ -7,7 +7,7 @@ from datetime import datetime
 
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 
-from src.desktop.theme import LIGHT_THEME, DARK_THEME
+from src.desktop.theme import LIGHT_THEME
 from src.desktop.signals import SignalHub
 from src.desktop.main_window import MainWindow
 from src.desktop.tray import SystemTray

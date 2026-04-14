@@ -83,3 +83,23 @@ DASHBOARD_SECRET = _opt("DASHBOARD_SECRET", "bolecode-dev-secret")
 
 # ── Segurança ─────────────────────────────────────────────────────────────────
 ENCRYPTION_KEY = _opt("ENCRYPTION_KEY", "dev-key-32-chars-nao-usar-prod!!")
+
+# ── Validação de segurança em produção ────────────────────────────────────────
+_UNSAFE_SECRETS = {"bolecode-dev-secret", "troque_por_segredo_forte_aqui", ""}
+_UNSAFE_KEYS = {"dev-key-32-chars-nao-usar-prod!!", "troque_por_32_chars_ou_mais_aqui__", ""}
+
+if BRADESCO_ENV == "producao":
+    import warnings
+    if DASHBOARD_SECRET in _UNSAFE_SECRETS:
+        warnings.warn(
+            "DASHBOARD_SECRET com valor INSEGURO em PRODUCAO! "
+            "Webhooks serao rejeitados. Configure um secret forte no .env.",
+            RuntimeWarning, stacklevel=1,
+        )
+    if ENCRYPTION_KEY in _UNSAFE_KEYS:
+        warnings.warn(
+            "ENCRYPTION_KEY com valor INSEGURO em PRODUCAO! "
+            "Dados sensiveis no banco ficarao vulneraveis. "
+            "Configure uma chave forte de 32+ caracteres no .env.",
+            RuntimeWarning, stacklevel=1,
+        )

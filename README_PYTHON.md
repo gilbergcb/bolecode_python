@@ -1,8 +1,8 @@
-# BOLECODE — Monitor de Cobrança Bradesco (Python / Windows)
+# BOLECODE — Monitor de Cobranças Bradesco (Python / Windows)
 
-Aplicação desktop para Windows que monitora a tabela `PCPREST` do Winthor
-(Oracle 19c), registra boletos híbridos com QR Code PIX na API Bradesco e
-devolve o código EMV de volta ao Winthor, tudo de forma automática e contínua.
+Aplicacao desktop PySide6 para Windows que monitora a tabela `PCPREST` do Winthor
+(Oracle 19c), registra **Boletos Hibridos** e **PIX Cobranca COBV** na API Bradesco,
+e devolve o QR Code EMV de volta ao Winthor — tudo de forma automatica e continua.
 
 ---
 
@@ -10,35 +10,39 @@ devolve o código EMV de volta ao Winthor, tudo de forma automática e contínua
 
 ```
 Winthor Oracle 19c (PCPREST)
-        │  polling a cada 30s
-        ▼
-  PostgreSQL staging (boletos)
-        │  fila PENDENTE → PROCESSANDO
-        ▼
+        |  polling a cada 30s
+        v
+  Oracle staging (BOLECODE_BOLETOS)
+        |  fila PENDENTE -> PROCESSANDO
+        v
   API Bradesco (mTLS + OAuth2)
-        │  nosso_numero + QR Code EMV
-        ▼
-  PostgreSQL (status REGISTRADO)
-        │  writeback a cada 20s
-        ▼
+   |                        |
+   | Boleto Hibrido         | PIX COBV (qrpix.bradesco.com.br)
+   v                        v
+  Oracle (status REGISTRADO + QR Code EMV)
+        |  writeback a cada 20s
+        v
   Winthor Oracle 19c (PCPREST.QRCODE_PIX)
 ```
 
+**Banco unico**: Oracle 19c armazena tanto os dados Winthor quanto as tabelas de staging do BOLECODE (sem PostgreSQL).
+
+**Dual mode**: O tipo de cobranca (Boleto vs PIX) e configuravel por CODCOB via tabela `CONFIGURACOES` e tela Settings.
+
 ---
 
-## Pré-requisitos
+## Pre-requisitos
 
-| Componente | Versão mínima |
+| Componente | Versao minima |
 |---|---|
 | Windows | 10 / Server 2016 |
 | Python | 3.11+ |
-| PostgreSQL | 14+ (pode ser local ou remoto) |
-| Oracle Instant Client | 19c ou 21c |
+| Oracle Instant Client | 19c ou 21c (thick mode) |
 | Certificado Bradesco | PEM (.crt + .key) — sandbox: autoassinado |
 
 ---
 
-## Instalação rápida
+## Instalacao rapida
 
 ```bat
 REM Execute o setup como Administrador
@@ -47,12 +51,12 @@ setup.bat
 
 O script:
 1. Cria venv em `.venv/`
-2. Instala todas as dependências
-3. Abre `.env` no Notepad para configuração
+2. Instala todas as dependencias
+3. Abre `.env` no Notepad para configuracao
 
 ---
 
-## Configuração (.env)
+## Configuracao (.env)
 
 Edite `.env` (copiado de `.env.example`) preenchendo:
 
@@ -65,29 +69,27 @@ ORACLE_USER=LOCAL
 ORACLE_PASSWORD=LOCAL
 ORACLE_INSTANT_CLIENT_DIR=C:\oracle\instantclient_21_9
 
-# PostgreSQL
-PG_HOST=localhost
-PG_DATABASE=bolecode
-PG_USER=bolecode
-PG_PASSWORD=bolecode123
-
-# Bradesco
+# Bradesco API
 BRADESCO_ENV=sandbox          # ou: producao
 BRADESCO_CLIENT_ID=...
 BRADESCO_CLIENT_SECRET=...
 BRADESCO_CERT_PEM=certs/bradesco.crt.pem
 BRADESCO_KEY_PEM=certs/bradesco.key.pem
 
-# Dados do beneficiário (contrato Bradesco)
+# Dados do beneficiario (contrato Bradesco)
 BRADESCO_NRO_CPF_CNPJ_BENEF=68542653     # CNPJ raiz
 BRADESCO_FIL_CPF_CNPJ_BENEF=1018
 BRADESCO_DIG_CPF_CNPJ_BENEF=38
-BRADESCO_CNEGOC_COBR=386100000000041000  # agência(4)+zeros(7)+conta(7)
+BRADESCO_CNEGOC_COBR=386100000000041000  # agencia(4)+zeros(7)+conta(7)
+BRADESCO_ALIAS_PIX=                       # chave PIX do beneficiario (EVP ou CNPJ)
+
+# PIX Cobranca (COBV)
+PIX_VALIDADE_APOS_VENCIMENTO=30           # dias apos vencimento
 ```
 
 ---
 
-## Executar (desenvolvimento)
+## Executar
 
 ```bat
 start.bat
@@ -100,24 +102,7 @@ Ou manualmente:
 python main.py
 ```
 
-O dashboard abre automaticamente em: **http://localhost:8765**
-
----
-
-## Instalar como Serviço Windows
-
-```bat
-REM Como Administrador:
-.venv\Scripts\python install_service.py install
-.venv\Scripts\python install_service.py start
-
-REM Para parar / remover:
-.venv\Scripts\python install_service.py stop
-.venv\Scripts\python install_service.py remove
-```
-
-O serviço inicia automaticamente com o Windows e roda sem interface gráfica.
-Para monitorar, acesse o dashboard via navegador: http://localhost:8765
+A aplicacao desktop abre com 4 abas + icone no system tray.
 
 ---
 
@@ -125,129 +110,124 @@ Para monitorar, acesse o dashboard via navegador: http://localhost:8765
 
 ```
 bolecode/
-├── main.py                        # Entry point
-├── install_service.py             # Instalação como serviço Windows
-├── setup.bat                      # Setup automático
-├── start.bat                      # Inicialização rápida
+├── main.py                              # Entry point (QApplication)
+├── setup.bat                            # Setup automatico
+├── start.bat                            # Inicializacao rapida
 ├── requirements.txt
 ├── .env.example
-├── certs/                         # Certificados mTLS (gitignored)
-├── logs/                          # Logs rotativos (gitignored)
+├── certs/                               # Certificados mTLS (gitignored)
+├── logs/                                # Logs rotativos (gitignored)
 └── src/
-    ├── config.py                  # Variáveis de ambiente validadas
+    ├── config.py                        # Variaveis de ambiente validadas
     ├── db/
-    │   ├── oracle.py              # Pool Oracle (thick mode)
-    │   └── postgres.py            # Pool PG + migrations automáticas
+    │   └── oracle.py                    # Pool Oracle (thick mode) + migrations
     ├── api/
-    │   └── bradesco_client.py     # Cliente HTTP mTLS + token cache
+    │   ├── bradesco_client.py           # Cliente HTTP mTLS (Boleto Hibrido)
+    │   └── pix_client.py               # Cliente HTTP mTLS (PIX COBV)
     ├── jobs/
-    │   ├── sync_pcprest.py        # Oracle → PostgreSQL (monitor)
-    │   ├── registrar_boletos.py   # PostgreSQL → API Bradesco
-    │   ├── writeback_oracle.py    # QR Code → Oracle PCPREST
-    │   └── consultar_liquidados.py # Detecção de pagamentos (polling)
+    │   ├── sync_pcprest.py              # Oracle PCPREST -> staging (monitor)
+    │   ├── registrar_boletos.py         # Staging -> API Bradesco (Boleto)
+    │   ├── registrar_pix.py             # Staging -> API Bradesco (PIX COBV)
+    │   ├── writeback_oracle.py          # QR Code -> Oracle PCPREST
+    │   ├── consultar_liquidados.py      # Deteccao pagamentos Boleto (polling)
+    │   └── consultar_pix.py            # Deteccao pagamentos PIX (polling)
     ├── monitor/
-    │   └── scheduler.py           # APScheduler (orquestra os jobs)
+    │   └── scheduler.py                 # APScheduler (orquestra os jobs)
+    ├── desktop/
+    │   ├── app.py                       # BolecodeApp (orquestracao PySide6)
+    │   ├── main_window.py               # MainWindow (4 tabs + status bar)
+    │   ├── tray.py                      # QSystemTrayIcon + toast notifications
+    │   ├── theme.py                     # QSS dark/light themes
+    │   ├── signals.py                   # SignalHub (ponte threads->UI)
+    │   ├── models/
+    │   │   ├── boletos_model.py         # QAbstractTableModel para boletos
+    │   │   └── logs_model.py            # QAbstractTableModel para logs
+    │   ├── services/
+    │   │   ├── data_service.py          # Queries Oracle diretas (sem HTTP)
+    │   │   └── refresh_worker.py        # QTimer + QThreadPool auto-refresh 15s
+    │   └── widgets/
+    │       ├── dashboard_tab.py         # KPIs + scheduler + filial bars
+    │       ├── boletos_tab.py           # Tabela + filtros + paginacao + acoes
+    │       ├── erros_tab.py             # Tabela erros + reprocessar
+    │       ├── logs_tab.py              # Tabela logs
+    │       ├── kpi_card.py              # Widget KPI reutilizavel
+    │       ├── scheduler_card.py        # Widget status job reutilizavel
+    │       ├── qr_dialog.py             # Modal QR Code EMV + copiar
+    │       ├── cobranca_tab.py          # Config Boleto/PIX por CODCOB
+    │       └── settings_dialog.py       # Dialog configuracoes
     └── ui/
-        ├── api_routes.py          # FastAPI (REST + SPA)
-        ├── webhook_receiver.py    # Endpoint de callback Bradesco
-        ├── tray.py                # Tray icon Windows (pystray)
-        └── static/
-            └── index.html         # Dashboard SPA
+        ├── api_routes.py                # FastAPI (webhook-only + health check)
+        ├── webhook_receiver.py          # Callback Bradesco (Boleto)
+        └── pix_webhook_receiver.py      # Callback Bradesco (PIX)
 ```
 
 ---
 
-## Fluxo detalhado dos jobs
+## Jobs automaticos
 
-### sync_pcprest (a cada 30s)
-Consulta `PCPREST JOIN PCCLIENT` no Oracle filtrando:
-- `CODCOB = 237`
-- `CODFILIAL = 1` (configurável)
-- `QRCODE_PIX IS NULL`
-- `DTPAG IS NULL`
-- `DTVENC >= SYSDATE - 30`
+| Job | Intervalo | Descricao |
+|---|---|---|
+| sync_pcprest | 30s | Polling Oracle PCPREST -> staging |
+| registrar_boletos | 15s | Fila PENDENTE -> API Bradesco (Boleto Hibrido) |
+| registrar_pix | 15s | Fila PENDENTE -> API Bradesco (PIX COBV) |
+| writeback_oracle | 20s | QR Code EMV -> Oracle PCPREST |
+| consultar_liquidados | 60min | Polling pagamentos Boleto |
+| consultar_pix | 60min | Polling pagamentos PIX |
 
-Insere novos registros na tabela `boletos` do PostgreSQL com `ON CONFLICT DO NOTHING`.
+---
 
-### registrar_boletos (a cada 15s)
-Para cada boleto com status `PENDENTE` ou `ERRO` (até 3 tentativas):
-1. Gera `nosso_numero` via sequence PostgreSQL (11 dígitos, único)
-2. Monta payload completo da API Bradesco com dados do sacado (de `dados_oracle` JSONB)
-3. Chama `POST /boleto-hibrido/cobranca-registro/v1/gerarBoleto`
-4. Salva `qrcode_emv` (EMV copy-paste), `tx_id`, `linha_digitavel`, `cod_barras`
-5. Status → `REGISTRADO`
+## App Desktop (PySide6)
 
-### writeback_oracle (a cada 20s)
-Para cada boleto `REGISTRADO` com `oracle_atualizado = FALSE`:
-- Executa `UPDATE PCPREST SET QRCODE_PIX = :qr, NOSSO_NUMERO = :nn WHERE ...`
-- Marca `oracle_atualizado = TRUE` no PostgreSQL
+### 4 Abas
+- **Dashboard**: 6 KPI cards, status dos jobs, grafico por filial, ultimos registrados
+- **Boletos**: tabela completa + filtros (status, filial) + paginacao + Ver QR + Reprocessar
+- **Erros**: tabela filtrada ERRO + reprocessar individual/todos
+- **Logs**: ultimos registros de service_log com nivel colorido
 
-### consultar_liquidados (a cada 60 min)
-Alternativa ao webhook: consulta a API Bradesco por boletos pagos no dia e marca `BAIXADO`.
+### System Tray
+- Icone colorido por status (azul=ativo, verde=ok, vermelho=erro)
+- Menu: Mostrar | Pausar/Retomar | Sair
+- Toast notifications nativas Windows
+- Fechar janela (X) = minimiza para tray
+
+### Settings Dialog
+- Configuracao de cobranças: selecao Boleto/PIX por CODCOB (tabela PCCOB)
+- Filiais monitoradas
+- Validade PIX apos vencimento
 
 ---
 
 ## Webhook de pagamento (opcional)
 
-Para receber notificações em tempo real de pagamentos:
+Para receber notificacoes em tempo real:
 
-1. Cadastre a URL no Bradesco:
-```
-POST /boleto/cobranca-webhook/v1/executar
-```
-Com a URL: `https://seu-dominio.com/webhook/bradesco/pagamento`
+| Tipo | Endpoint |
+|---|---|
+| Boleto | `POST /webhook/bradesco/pagamento` |
+| PIX | `POST /webhook/pix/pagamento` |
 
-2. Requisitos do certificado para produção:
-   - SSL tipo **EV ou OV** (não DV)
-   - CN = URL do endpoint
-   - TLS 1.2+
-
-O endpoint já está implementado em `src/ui/webhook_receiver.py`.
+Requisitos para producao:
+- SSL tipo **EV ou OV** (nao DV)
+- CN = URL do endpoint
+- TLS 1.2+
 
 ---
 
-## Coluna QRCODE_PIX no Oracle
-
-O campo `QRCODE_PIX` precisa existir em `PCPREST`. Se ainda não existe:
-
-```sql
-ALTER TABLE PCPREST ADD (
-    QRCODE_PIX   VARCHAR2(4000),
-    NOSSO_NUMERO VARCHAR2(11)
-);
-```
-
-Execute como DBA no Oracle.
-
----
-
-## Banco PostgreSQL
-
-O PostgreSQL é usado como fila e staging. As migrations rodam automaticamente no boot.
-Para criar o banco e usuário:
-
-```sql
-CREATE DATABASE bolecode;
-CREATE USER bolecode WITH PASSWORD 'bolecode123';
-GRANT ALL PRIVILEGES ON DATABASE bolecode TO bolecode;
-```
-
----
-
-## Observações importantes
+## Observacoes importantes
 
 | Ponto | Detalhe |
 |---|---|
-| Oracle thick mode | Necessário para Oracle 10g/19c. Requer Instant Client no `ORACLE_INSTANT_CLIENT_DIR` |
-| `PREST` é VARCHAR2(2) | Nunca converter para número — sempre tratar como string |
-| `vnmnalTitloCobr` | Valor em centavos sem decimal: R$ 50,00 → `"5000"` |
-| Token Bradesco | Validade de 1h — reutilizado automaticamente, renovado 5 min antes |
+| Oracle thick mode | Necessario para Oracle 19c. Requer Instant Client no `ORACLE_INSTANT_CLIENT_DIR` |
+| `PREST` e VARCHAR2(2) | Nunca converter para numero — sempre tratar como string |
+| `vnmnalTitloCobr` | Valor em centavos sem decimal: R$ 50,00 -> `"5000"` |
+| Token Bradesco | Validade 1h — reutilizado automaticamente, renovado 5 min antes |
 | mTLS sandbox | Certificado A1 autoassinado aceito em sandbox |
-| mTLS produção | Certificado A1 emitido por AC, CN com razão social + CNPJ |
-| Idempotência | `ON CONFLICT DO NOTHING` + coluna `nosso_numero UNIQUE` evitam duplicatas |
+| mTLS producao | Certificado A1 emitido por AC, CN com razao social + CNPJ |
+| Idempotencia | MERGE INTO + nosso_numero UNIQUE evitam duplicatas |
+| Banco unico | Oracle 19c armazena tudo (Winthor + staging BOLECODE), sem PostgreSQL |
 
 ---
 
-## Licença
+## Licenca
 
-Uso interno. Não distribuir.
+Uso interno. Nao distribuir.

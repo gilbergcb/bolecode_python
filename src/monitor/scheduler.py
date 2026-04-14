@@ -32,11 +32,13 @@ _last_status: dict = {
     "registrar": "aguardando",
     "registrar_pix": "aguardando",
     "writeback": "aguardando",
+    "liquidados": "aguardando",
     "consultar_pix": "aguardando",
     "sync_count": 0,
     "registrar_count": 0,
     "registrar_pix_count": 0,
     "writeback_count": 0,
+    "liquidados_count": 0,
     "consultar_pix_count": 0,
 }
 _job_callback: Callable[[str, str, int], None] | None = None

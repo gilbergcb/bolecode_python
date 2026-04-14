@@ -10,10 +10,11 @@ Requisitos do Bradesco para webhook em producao:
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Request, HTTPException, status
+from fastapi import APIRouter, Request, HTTPException, status, Depends
 from loguru import logger
 
 from src.db.oracle import stg_query, stg_execute, execute_oracle, log_service_event
+from src.ui._webhook_auth import verify_webhook_secret
 
 router = APIRouter(prefix="/webhook", tags=["webhook"])
 
@@ -29,7 +30,8 @@ CANAL_PAGAMENTO = {
 }
 
 
-@router.post("/bradesco/pagamento", status_code=status.HTTP_200_OK)
+@router.post("/bradesco/pagamento", status_code=status.HTTP_200_OK,
+              dependencies=[Depends(verify_webhook_secret)])
 async def receber_pagamento(request: Request):
     """Endpoint de callback para notificacoes de pagamento do Bradesco."""
     try:

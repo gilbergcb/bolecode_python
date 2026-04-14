@@ -20,10 +20,14 @@ from fastapi import Request
 from loguru import logger
 
 from src.db.oracle import stg_query, stg_execute, execute_oracle, log_service_event
+from src.ui._webhook_auth import check_webhook_secret
 
 
 async def handle_pix_webhook(request: Request) -> dict:
     """Processa notificacao de pagamento PIX do Bradesco."""
+    # Verifica autenticacao do webhook
+    check_webhook_secret(request)
+
     try:
         body = await request.json()
     except Exception:
